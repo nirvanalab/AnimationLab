@@ -19,6 +19,7 @@ class ViewController: UIViewController {
     
     var trayOpenCenter:CGPoint = CGPoint.zero
     var trayCloseCenter:CGPoint = CGPoint.zero
+    var newlyCreatedFace: UIImageView!
     
     var currentTrayState:TrayState = .Open {
         didSet {
@@ -42,8 +43,11 @@ class ViewController: UIViewController {
             case .began:
                 break
             case .changed:
-                let translation = sender.translation(in: sender.view)
-                trayView.center = CGPoint(x: trayView.center.x + translation.x, y: trayView.center.y+translation.y)
+                if let view = sender.view {
+                    let translation = sender.translation(in: sender.view)
+                    view.center = CGPoint(x: view.center.x + translation.x, y: view.center.y+translation.y)
+                }
+               
                 break
             case .ended:
                 let velocity = sender.velocity(in: sender.view)
@@ -63,6 +67,45 @@ class ViewController: UIViewController {
         currentTrayState = currentTrayState == .Open ? .Closed : .Open
     }
     
+    
+    @IBAction func onEmoticonPan(_ sender: UIPanGestureRecognizer) {
+        
+        switch sender.state {
+        case .began:
+            // Gesture recognizers know the view they are attached to
+            let imageView = sender.view as! UIImageView
+            
+            // Create a new image view that has the same image as the one currently panning
+            newlyCreatedFace = UIImageView.init(frame: (sender.view?.frame)!)
+            newlyCreatedFace.image = imageView.image
+            
+            
+            // Add the new face to the tray's parent view.
+            view.addSubview(newlyCreatedFace)
+            
+            // Initialize the position of the new face.
+            newlyCreatedFace.center = imageView.center
+            
+            // Since the original face is in the tray, but the new face is in the
+            // main view, you have to offset the coordinates
+            newlyCreatedFace.center.y += trayView.frame.origin.y
+            
+            break
+        case .changed:
+            if let view = sender.view {
+                let translation = sender.translation(in: view)
+                newlyCreatedFace.center = CGPoint(x: newlyCreatedFace.center.x + translation.x, y: newlyCreatedFace.center.y+translation.y)
+            }
+            break
+        case .ended:
+            break
+        default:
+            break
+        }
+        sender.setTranslation(CGPoint.zero, in: self.view)
+
+    }
+        
     func moveTray(position:TrayState) {
         var trayPosition = CGPoint.zero
         switch position {
